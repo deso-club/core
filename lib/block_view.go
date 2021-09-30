@@ -2687,7 +2687,7 @@ func (bav *UtxoView) _disconnectAcceptNFTBid(
 	//  (2) Add back all of the bids that were deleted.
 	//  (3) Disconnect payment UTXOs.
 	//  (4) Unspend bidder UTXOs.
-	//  (5) Revert profileEntry to undo royalties added to DeSoLockedNanos.
+	//  (5) Revert profileEntry to undo royalties added to DESOLockedNanos.
 	//  (6) Revert the postEntry since NumNFTCopiesForSale was decremented.
 
 	// (1) Set the old NFT entry.
@@ -5109,7 +5109,7 @@ func (bav *UtxoView) setProfileMappings(profile *PGProfile) (*ProfileEntry, *PKI
 			ProfilePic:  profile.ProfilePic,
 			CoinEntry: CoinEntry{
 				CreatorBasisPoints:      profile.CreatorBasisPoints,
-				DeSoLockedNanos:         profile.DeSoLockedNanos,
+				DeSoLockedNanos:         profile.DESOLockedNanos,
 				NumberOfHolders:         profile.NumberOfHolders,
 				CoinsInCirculationNanos: profile.CoinsInCirculationNanos,
 				CoinWatermarkNanos:      profile.CoinWatermarkNanos,
@@ -8372,11 +8372,11 @@ func (bav *UtxoView) HelpConnectCreatorCoinBuy(
 	// a direct copy is OK.
 	prevCoinEntry := existingProfileEntry.CoinEntry
 
-	// Increment DeSoLockedNanos. Sanity-check that we're not going to
+	// Increment DESOLockedNanos. Sanity-check that we're not going to
 	// overflow.
 	if existingProfileEntry.DeSoLockedNanos > math.MaxUint64-desoRemainingNanos {
 		return 0, 0, 0, 0, nil, fmt.Errorf("_connectCreatorCoin: Overflow while summing"+
-			"DeSoLockedNanos and desoAfterFounderRewardNanos: %v %v",
+			"DESOLockedNanos and desoAfterFounderRewardNanos: %v %v",
 			existingProfileEntry.DeSoLockedNanos, desoRemainingNanos)
 	}
 	existingProfileEntry.DeSoLockedNanos += desoRemainingNanos
@@ -8800,7 +8800,7 @@ func (bav *UtxoView) HelpConnectCreatorCoinSell(
 		existingProfileEntry.NumberOfHolders -= 1
 	}
 
-	// If the number of holders has reached zero, we clear all the DeSoLockedNanos and
+	// If the number of holders has reached zero, we clear all the DESOLockedNanos and
 	// creatorCoinToSellNanos to ensure that the profile is reset to its normal initial state.
 	// It's okay to modify these values because they are saved in the PrevCoinEntry.
 	if existingProfileEntry.NumberOfHolders == 0 {

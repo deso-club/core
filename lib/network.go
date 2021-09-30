@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
+	"database/sql/driver"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -74,6 +75,25 @@ func (bh *BlockHash) NewBlockHash() *BlockHash {
 	newBlockhash := &BlockHash{}
 	copy(newBlockhash[:], bh[:])
 	return newBlockhash
+}
+
+// SQL support
+func (bh *BlockHash) Value() (driver.Value, error) {
+	if bh == nil {
+		return nil, nil
+	}
+
+	return bh.ToBytes(), nil
+}
+
+// SQL support
+func (bh *BlockHash) Scan(src interface{}) error {
+	v, ok := src.([]byte)
+	if !ok {
+		return errors.New("bad []byte type assertion")
+	}
+	*bh = *NewBlockHash(v)
+	return nil
 }
 
 // The MsgType is usually sent on the wire to indicate what type of
@@ -966,7 +986,7 @@ func (msg *MsgDeSoGetBlocks) String() string {
 // DeSoBodySchema Within a post, the body typically has a particular
 // schema defined below.
 type DeSoBodySchema struct {
-	Body      string `json:",omitempty"`
+	Body      string   `json:",omitempty"`
 	ImageURLs []string `json:",omitempty"`
 	VideoURLs []string `json:",omitempty"`
 }
@@ -2738,7 +2758,7 @@ func (msg *MsgDeSoTxn) Sign(privKey *btcec.PrivateKey) (*btcec.Signature, error)
 // SignTransactionWithDerivedKey the signature contains solution iteration,
 // which allows us to recover signer public key from the signature.
 // Returns (new txn bytes, txn signature, error)
-func SignTransactionWithDerivedKey(txnBytes []byte, privateKey *btcec.PrivateKey) ([]byte, []byte, error){
+func SignTransactionWithDerivedKey(txnBytes []byte, privateKey *btcec.PrivateKey) ([]byte, []byte, error) {
 	// As we're signing the transaction using a derived key, we
 	// pass the key to extraData.
 	rr := bytes.NewReader(txnBytes)
@@ -3728,8 +3748,8 @@ func (txnData *UpdateBitcoinUSDExchangeRateMetadataa) New() DeSoTxnMetadata {
 type CreatorCoinOperationType uint8
 
 const (
-	CreatorCoinOperationTypeBuy         CreatorCoinOperationType = 0
-	CreatorCoinOperationTypeSell        CreatorCoinOperationType = 1
+	CreatorCoinOperationTypeBuy     CreatorCoinOperationType = 0
+	CreatorCoinOperationTypeSell    CreatorCoinOperationType = 1
 	CreatorCoinOperationTypeAddDeSo CreatorCoinOperationType = 2
 )
 
@@ -3749,16 +3769,16 @@ type CreatorCoinMetadataa struct {
 	// CreatorCoinToSellNanos will be converted into DeSo. In an AddDeSo
 	// operation, DeSoToAddNanos will be aded for the user. This allows us to
 	// support multiple transaction types with same meta field.
-	DeSoToSellNanos    uint64
+	DeSoToSellNanos        uint64
 	CreatorCoinToSellNanos uint64
-	DeSoToAddNanos     uint64
+	DeSoToAddNanos         uint64
 
 	// When a user converts DeSo into CreatorCoin, MinCreatorCoinExpectedNanos
 	// specifies the minimum amount of creator coin that the user expects from their
 	// transaction. And vice versa when a user is converting CreatorCoin for DeSo.
 	// Specifying these fields prevents the front-running of users' buy/sell. Setting
 	// them to zero turns off the check. Give it your best shot, Ivan.
-	MinDeSoExpectedNanos    uint64
+	MinDeSoExpectedNanos        uint64
 	MinCreatorCoinExpectedNanos uint64
 }
 
@@ -3776,15 +3796,15 @@ func (txnData *CreatorCoinMetadataa) ToBytes(preSignature bool) ([]byte, error) 
 	// OperationType byte
 	data = append(data, byte(txnData.OperationType))
 
-	// DeSoToSellNanos    uint64
+	// DESOToSellNanos    uint64
 	data = append(data, UintToBuf(uint64(txnData.DeSoToSellNanos))...)
 
 	// CreatorCoinToSellNanos uint64
 	data = append(data, UintToBuf(uint64(txnData.CreatorCoinToSellNanos))...)
-	// DeSoToAddNanos     uint64
+	// DESOToAddNanos     uint64
 	data = append(data, UintToBuf(uint64(txnData.DeSoToAddNanos))...)
 
-	// MinDeSoExpectedNanos    uint64
+	// MinDESOExpectedNanos    uint64
 	data = append(data, UintToBuf(uint64(txnData.MinDeSoExpectedNanos))...)
 	// MinCreatorCoinExpectedNanos uint64
 	data = append(data, UintToBuf(uint64(txnData.MinCreatorCoinExpectedNanos))...)
@@ -3812,10 +3832,10 @@ func (txnData *CreatorCoinMetadataa) FromBytes(dataa []byte) error {
 	}
 	ret.OperationType = CreatorCoinOperationType(operationType)
 
-	// DeSoToSellNanos    uint64
+	// DESOToSellNanos    uint64
 	ret.DeSoToSellNanos, err = ReadUvarint(rr)
 	if err != nil {
-		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading DeSoToSellNanos: %v", err)
+		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading DESOToSellNanos: %v", err)
 	}
 
 	// CreatorCoinToSellNanos uint64
@@ -3824,16 +3844,16 @@ func (txnData *CreatorCoinMetadataa) FromBytes(dataa []byte) error {
 		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading CreatorCoinToSellNanos: %v", err)
 	}
 
-	// DeSoToAddNanos     uint64
+	// DESOToAddNanos     uint64
 	ret.DeSoToAddNanos, err = ReadUvarint(rr)
 	if err != nil {
-		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading DeSoToAddNanos: %v", err)
+		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading DESOToAddNanos: %v", err)
 	}
 
-	// MinDeSoExpectedNanos    uint64
+	// MinDESOExpectedNanos    uint64
 	ret.MinDeSoExpectedNanos, err = ReadUvarint(rr)
 	if err != nil {
-		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading MinDeSoExpectedNanos: %v", err)
+		return fmt.Errorf("CreatorCoinMetadata.FromBytes: Error reading MinDESOExpectedNanos: %v", err)
 	}
 
 	// MinCreatorCoinExpectedNanos uint64

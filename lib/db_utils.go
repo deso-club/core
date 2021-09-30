@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"crypto/rand"
+	"database/sql/driver"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
@@ -198,9 +199,9 @@ var (
 	// 		Reposts: <prefix, RepostedPostHash, ReposterPubKey> -> <>
 	// 		Quote Reposts: <prefix, RepostedPostHash, ReposterPubKey, RepostPostHash> -> <>
 	// 		Diamonds: <prefix, DiamondedPostHash, DiamonderPubKey [33]byte> -> <DiamondLevel (uint64)>
-	_PrefixRepostedPostHashReposterPubKey                = []byte{45}
+	_PrefixRepostedPostHashReposterPubKey               = []byte{45}
 	_PrefixRepostedPostHashReposterPubKeyRepostPostHash = []byte{46}
-	_PrefixDiamondedPostHashDiamonderPKIDDiamondLevel      = []byte{47}
+	_PrefixDiamondedPostHashDiamonderPKIDDiamondLevel   = []byte{47}
 
 	// Prefixes for NFT ownership:
 	// 	<prefix, NFTPostHash [32]byte, SerialNumber uint64> -> NFTEntry
@@ -265,6 +266,25 @@ func (pkid *PKID) NewPKID() *PKID {
 	return newPkid
 }
 
+// SQL support
+func (pkid *PKID) Value() (driver.Value, error) {
+	if pkid == nil {
+		return nil, nil
+	}
+
+	return pkid.ToBytes(), nil
+}
+
+// SQL support
+func (pkid *PKID) Scan(src interface{}) error {
+	v, ok := src.([]byte)
+	if !ok {
+		return errors.New("bad []byte type assertion")
+	}
+	*pkid = *NewPKID(v)
+	return nil
+}
+
 func NewPublicKey(publicKeyBytes []byte) *PublicKey {
 	if len(publicKeyBytes) == 0 {
 		return nil
@@ -274,8 +294,27 @@ func NewPublicKey(publicKeyBytes []byte) *PublicKey {
 	return publicKey
 }
 
-func (publicKey *PublicKey) ToBytes() []byte {
-	return publicKey[:]
+func (pk *PublicKey) ToBytes() []byte {
+	return pk[:]
+}
+
+// SQL support
+func (pk *PublicKey) Value() (driver.Value, error) {
+	if pk == nil {
+		return nil, nil
+	}
+
+	return pk.ToBytes(), nil
+}
+
+// SQL support
+func (pk *PublicKey) Scan(src interface{}) error {
+	v, ok := src.([]byte)
+	if !ok {
+		return errors.New("bad []byte type assertion")
+	}
+	*pk = *NewPublicKey(v)
+	return nil
 }
 
 func PublicKeyToPKID(publicKey []byte) *PKID {
@@ -3175,9 +3214,9 @@ type CreatorCoinTxindexMetadata struct {
 	// CreatorPublicKeyBase58Check in AffectedPublicKeys
 
 	// Differs depending on OperationType.
-	DeSoToSellNanos    uint64
+	DeSoToSellNanos        uint64
 	CreatorCoinToSellNanos uint64
-	DeSoToAddNanos     uint64
+	DeSoToAddNanos         uint64
 }
 
 type CreatorCoinTransferTxindexMetadata struct {
