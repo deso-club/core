@@ -176,6 +176,7 @@ type MessageEntry struct {
 
 // Entry for a public key forbidden from signing blocks.
 type ForbiddenPubKeyEntry struct {
+	ID     uint64
 	PubKey []byte
 
 	// Whether or not this entry is deleted in the view.
@@ -196,6 +197,7 @@ type LikeKey struct {
 
 // LikeEntry stores the content of a like transaction.
 type LikeEntry struct {
+	ID            uint64
 	LikerPubKey   []byte
 	LikedPostHash *BlockHash
 
@@ -219,6 +221,7 @@ type NFTKey struct {
 // postEntry, but a single postEntry can map to multiple NFT entries. Each NFT copy is
 // defined by a serial number, which denotes it's place in the set (ie. #1 of 100).
 type NFTEntry struct {
+	ID                         uint64
 	LastOwnerPKID              *PKID // This is needed to decrypt unlockable text.
 	OwnerPKID                  *PKID
 	NFTPostHash                *BlockHash
@@ -251,6 +254,7 @@ type NFTBidKey struct {
 
 // This struct defines a single bid on an NFT.
 type NFTBidEntry struct {
+	ID             uint64
 	BidderPKID     *PKID
 	NFTPostHash    *BlockHash
 	SerialNumber   uint64
@@ -261,6 +265,8 @@ type NFTBidEntry struct {
 }
 
 type DerivedKeyEntry struct {
+	ID uint64
+
 	// Owner public key
 	OwnerPublicKey PublicKey
 
@@ -307,6 +313,7 @@ type FollowKey struct {
 
 // FollowEntry stores the content of a follow transaction.
 type FollowEntry struct {
+	ID uint64
 	// Note: It's a little redundant to have these in the entry because they're
 	// already used as the key in the DB but it doesn't hurt for now.
 	FollowerPKID *PKID
@@ -338,6 +345,7 @@ func (mm *DiamondKey) String() string {
 
 // DiamondEntry stores the number of diamonds given by a sender to a post.
 type DiamondEntry struct {
+	ID              uint64
 	SenderPKID      *PKID
 	ReceiverPKID    *PKID
 	DiamondPostHash *BlockHash
@@ -471,6 +479,9 @@ func (bav *UtxoView) GetRepostPostEntryStateForReader(readerPK []byte, postHash 
 }
 
 type PostEntry struct {
+	// MySQL ID
+	ID uint64
+
 	// The hash of this post entry. Used as the ID for the entry.
 	PostHash *BlockHash
 
@@ -603,6 +614,8 @@ func (mm BalanceEntryMapKey) String() string {
 // that looks as follows:
 // <HodlerPKID, CreatorPKID> -> HODLerEntry
 type BalanceEntry struct {
+	ID uint64
+
 	// The PKID of the HODLer. This should never change after it's set initially.
 	HODLerPKID *PKID
 	// The PKID of the creator. This should never change after it's set initially.
@@ -4452,6 +4465,7 @@ func (bav *UtxoView) GetDiamondEntryForDiamondKey(diamondKey *DiamondKey) *Diamo
 		diamond := bav.Postgres.GetDiamond(&diamondKey.SenderPKID, &diamondKey.ReceiverPKID, &diamondKey.DiamondPostHash)
 		if diamond != nil {
 			diamondEntry = &DiamondEntry{
+				ID:              diamond.ID,
 				SenderPKID:      diamond.SenderPKID,
 				ReceiverPKID:    diamond.ReceiverPKID,
 				DiamondPostHash: diamond.DiamondPostHash,

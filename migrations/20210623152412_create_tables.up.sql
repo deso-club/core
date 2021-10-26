@@ -1,14 +1,16 @@
 CREATE TABLE pg_chains (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name     TEXT(32) NOT NULL,
     tip_hash BINARY(32) NOT NULL,
 
-    UNIQUE KEY idx_nmae (name(32))
+    UNIQUE INDEX (name(32))
 );
 
 --bun:split
 
 CREATE TABLE pg_blocks (
-    hash              BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hash              BINARY(32) NOT NULL,
     parent_hash       BINARY(32),
     height            BIGINT NOT NULL,
     difficulty_target BINARY(32)  NOT NULL,
@@ -19,24 +21,30 @@ CREATE TABLE pg_blocks (
     nonce             BIGINT NOT NULL,
     extra_nonce       BIGINT,
     version           INT,
-    notified          BOOL NOT NULL
+    notified          BOOL NOT NULL,
+
+    UNIQUE INDEX (hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_transactions (
-    hash       BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hash       BINARY(32),
     block_hash BINARY(32) NOT NULL,
     type       SMALLINT NOT NULL,
     public_key BINARY(33),
     extra_data JSON,
     r          BINARY(32),
-    s          BINARY(32)
+    s          BINARY(32),
+
+    UNIQUE INDEX (hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_transaction_outputs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     output_hash  BINARY(32)    NOT NULL,
     output_index INT      NOT NULL,
     output_type  SMALLINT NOT NULL,
@@ -47,160 +55,201 @@ CREATE TABLE pg_transaction_outputs (
     input_hash   BINARY(32),
     input_index  INT,
 
-    PRIMARY KEY (output_hash, output_index)
+    UNIQUE INDEX (output_hash, output_index),
+    INDEX (public_key)
 );
 
 --bun:split
 
-CREATE INDEX pg_transaction_outputs_public_key ON pg_transaction_outputs (public_key);
-
---bun:split
-
 CREATE TABLE pg_metadata_block_rewards (
-    transaction_hash BINARY(32) PRIMARY KEY,
-    extra_data       BINARY(32) NOT NULL
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
+    extra_data       BINARY(32) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_bitcoin_exchanges (
-    transaction_hash    BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash    BINARY(32) NOT NULL,
     bitcoin_block_hash  BINARY(32) NOT NULL,
-    bitcoin_merkle_root BINARY(32) NOT NULL
+    bitcoin_merkle_root BINARY(32) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_private_messages (
-    transaction_hash     BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash     BINARY(32)  NOT NULL,
     recipient_public_key BINARY(33)  NOT NULL,
     encrypted_text       MEDIUMBLOB  NOT NULL,
-    timestamp_nanos      BIGINT NOT NULL
+    timestamp_nanos      BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_submit_posts (
-    transaction_hash    BINARY(32)  PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash    BINARY(32)  NOT NULL,
     post_hash_to_modify BINARY(32)  NOT NULL,
     parent_stake_id     BINARY(32)  NOT NULL,
     body                MEDIUMTEXT  NOT NULL,
     timestamp_nanos     BIGINT NOT NULL,
-    is_hidden           BOOL   NOT NULL
+    is_hidden           BOOL   NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_update_exchange_rates (
-    transaction_hash      BINARY(32) PRIMARY KEY,
-    usd_cents_per_bitcoin BIGINT NOT NULL
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash      BINARY(32) NOT NULL,
+    usd_cents_per_bitcoin BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_update_profiles (
-    transaction_hash         BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash         BINARY(32) NOT NULL,
     profile_public_key       BINARY(33),
     new_username             BINARY(32),
     new_description          BINARY(32),
     new_profile_pic          MEDIUMBLOB,
-    new_creator_basis_points BIGINT NOT NULL
+    new_creator_basis_points BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_follows (
-    transaction_hash    BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash    BINARY(32) NOT NULL,
     followed_public_key BINARY(33) NOT NULL,
-    is_unfollow         BOOL NOT NULL
+    is_unfollow         BOOL NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_likes (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     liked_post_hash  BINARY(32) NOT NULL,
-    is_unlike        BOOL NOT NULL
+    is_unlike        BOOL NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_creator_coins (
-    transaction_hash                BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash                BINARY(32) NOT NULL,
     profile_public_key              BINARY(33) NOT NULL,
     operation_type                  SMALLINT NOT NULL,
     deso_to_sell_nanos              BIGINT NOT NULL,
     creator_coin_to_sell_nanos      BIGINT NOT NULL,
     deso_to_add_nanos               BIGINT NOT NULL,
     min_deso_expected_nanos         BIGINT NOT NULL,
-    min_creator_coin_expected_nanos BIGINT NOT NULL
+    min_creator_coin_expected_nanos BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_swap_identities (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     from_public_key  BINARY(33) NOT NULL,
-    to_public_key    BINARY(33) NOT NULL
+    to_public_key    BINARY(33) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_creator_coin_transfers (
-    transaction_hash               BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash               BINARY(32) NOT NULL,
     profile_public_key             BINARY(33) NOT NULL,
     creator_coin_to_transfer_nanos BIGINT NOT NULL,
-    receiver_public_key            BINARY(33) NOT NULL
+    receiver_public_key            BINARY(33) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_create_nfts (
-    transaction_hash             BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash             BINARY(32) NOT NULL,
     nft_post_hash                BINARY(32) NOT NULL,
     num_copies                   BIGINT NOT NULL,
     has_unlockable               BOOL NOT NULL,
     is_for_sale                  BOOL NOT NULL,
     min_bid_amount_nanos         BIGINT NOT NULL,
     creator_royalty_basis_points BIGINT NOT NULL,
-    coin_royalty_basis_points    BIGINT NOT NULL
+    coin_royalty_basis_points    BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_update_nfts (
-    transaction_hash     BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash     BINARY(32) NOT NULL,
     nft_post_hash        BINARY(32) NOT NULL,
     serial_number        BIGINT NOT NULL,
     is_for_sale          BOOL NOT NULL,
-    min_bid_amount_nanos BIGINT NOT NULL
+    min_bid_amount_nanos BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_accept_nft_bids (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     nft_post_hash    BINARY(32) NOT NULL,
     serial_number    BIGINT NOT NULL,
     bidder_pkid      BINARY(33) NOT NULL,
     bid_amount_nanos BIGINT NOT NULL,
-    unlockable_text  BINARY(32) NOT NULL
+    unlockable_text  BINARY(32) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_bid_inputs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     transaction_hash BINARY(32) NOT NULL,
     input_hash       BINARY(32) NOT NULL,
     input_index      BIGINT NOT NULL,
 
-    PRIMARY KEY (transaction_hash, input_hash, input_index)
+    UNIQUE INDEX (transaction_hash, input_hash, input_index)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_nft_bids (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     nft_post_hash    BINARY(32) NOT NULL,
     serial_number    BIGINT NOT NULL,
     bid_amount_nanos BIGINT NOT NULL
@@ -209,7 +258,8 @@ CREATE TABLE pg_metadata_nft_bids (
 --bun:split
 
 CREATE TABLE pg_notifications (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     mined            BOOL NOT NULL,
     to_user          BINARY(32) NOT NULL,
     from_user        BINARY(32) NOT NULL,
@@ -223,7 +273,8 @@ CREATE TABLE pg_notifications (
 --bun:split
 
 CREATE TABLE pg_profiles (
-    pkid                       BINARY(33) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    pkid                       BINARY(33) NOT NULL,
     public_key                 BINARY(33) NOT NULL,
     username                   TEXT(25),
     description                TEXT,
@@ -232,25 +283,19 @@ CREATE TABLE pg_profiles (
     deso_locked_nanos          BIGINT,
     number_of_holders          BIGINT,
     coins_in_circulation_nanos BIGINT,
-    coin_watermark_nanos       BIGINT
+    coin_watermark_nanos       BIGINT,
+
+    UNIQUE INDEX (pkid),
+    INDEX (public_key),
+    INDEX (username(25)),
+    INDEX ((LOWER(username)))
 );
 
 --bun:split
 
-CREATE INDEX pg_profiles_public_key ON pg_profiles (public_key);
-
---bun:split
-
-CREATE INDEX pg_profiles_username ON pg_profiles (username(25));
-
---bun:split
-
-CREATE INDEX pg_profiles_lower_username ON pg_profiles ((LOWER(username)));
-
---bun:split
-
 CREATE TABLE pg_posts (
-    post_hash                    BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    post_hash                    BINARY(32) NOT NULL,
     poster_public_key            BINARY(33) NOT NULL,
     parent_post_hash             BINARY(32),
     body                         MEDIUMTEXT,
@@ -271,70 +316,82 @@ CREATE TABLE pg_posts (
     coin_royalty_basis_points    BIGINT,
     extra_data                   JSON,
     num_nft_copies_for_sale      BIGINT,
-    num_nft_copies_burned        BIGINT
+    num_nft_copies_burned        BIGINT,
+
+    UNIQUE INDEX (post_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_likes (
-    liker_public_key BINARY(33),
-    liked_post_hash  BINARY(32),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    liker_public_key BINARY(33) NOT NULL,
+    liked_post_hash  BINARY(32) NOT NULL,
 
-    PRIMARY KEY (liker_public_key, liked_post_hash)
+    UNIQUE INDEX (liker_public_key, liked_post_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_follows (
-    follower_pkid BINARY(33),
-    followed_pkid BINARY(33),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    follower_pkid BINARY(33) NOT NULL,
+    followed_pkid BINARY(33) NOT NULL,
 
-    PRIMARY KEY (follower_pkid, followed_pkid)
+    UNIQUE INDEX (follower_pkid, followed_pkid)
 );
 
 --bun:split
 
 CREATE TABLE pg_diamonds (
-    sender_pkid       BINARY(33),
-    receiver_pkid     BINARY(33),
-    diamond_post_hash BINARY(32),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sender_pkid       BINARY(33) NOT NULL,
+    receiver_pkid     BINARY(33) NOT NULL,
+    diamond_post_hash BINARY(32) NOT NULL,
     diamond_level     SMALLINT,
 
-    PRIMARY KEY (sender_pkid, receiver_pkid, diamond_post_hash)
+    UNIQUE INDEX (sender_pkid, receiver_pkid, diamond_post_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_messages (
-    message_hash         BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    message_hash         BINARY(32) NOT NULL,
     sender_public_key    BINARY(33),
     recipient_public_key BINARY(33),
     encrypted_text       MEDIUMBLOB,
-    timestamp_nanos      BIGINT
+    timestamp_nanos      BIGINT,
+
+    UNIQUE INDEX (message_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_creator_coin_balances (
-    holder_pkid   BINARY(33),
-    creator_pkid  BINARY(33),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    holder_pkid   BINARY(33) NOT NULL,
+    creator_pkid  BINARY(33) NOT NULL,
     balance_nanos BIGINT UNSIGNED,
     has_purchased BOOL,
 
-    PRIMARY KEY (holder_pkid, creator_pkid)
+    UNIQUE INDEX (holder_pkid, creator_pkid)
 );
 
 --bun:split
 
 CREATE TABLE pg_balances (
-    public_key    BINARY(33) PRIMARY KEY,
-    balance_nanos BIGINT UNSIGNED
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    public_key    BINARY(33) NOT NULL,
+    balance_nanos BIGINT UNSIGNED,
+
+    UNIQUE INDEX (public_key)
 );
 
 --bun:split
 
 CREATE TABLE pg_global_params (
-    id                           BIGINT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     usd_cents_per_bitcoin        BIGINT,
     create_profile_fee_nanos     BIGINT,
     create_nft_fee_nanos         BIGINT,
@@ -345,24 +402,29 @@ CREATE TABLE pg_global_params (
 --bun:split
 
 CREATE TABLE pg_reposts (
-    reposter_public_key BINARY(33),
-    reposted_post_hash  BINARY(32),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    reposter_public_key BINARY(33) NOT NULL,
+    reposted_post_hash  BINARY(32) NOT NULL,
     repost_post_hash    BINARY(32),
 
-    PRIMARY KEY (reposter_public_key, reposted_post_hash)
+    UNIQUE INDEX (reposter_public_key, reposted_post_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_forbidden_keys (
-    public_key BINARY(33) PRIMARY KEY
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    public_key BINARY(33) NOT NULL,
+
+    UNIQUE INDEX (public_key)
 );
 
 --bun:split
 
 CREATE TABLE pg_nfts (
-    nft_post_hash                  BINARY(32),
-    serial_number                  BIGINT,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nft_post_hash                  BINARY(32) NOT NULL,
+    serial_number                  BIGINT NOT NULL,
     last_owner_pkid                BINARY(33),
     owner_pkid                     BINARY(33),
     for_sale                       BOOL,
@@ -371,64 +433,78 @@ CREATE TABLE pg_nfts (
     last_accepted_bid_amount_nanos BIGINT,
     is_pending BOOL,
 
-    PRIMARY KEY (nft_post_hash, serial_number)
+    UNIQUE INDEX (nft_post_hash, serial_number)
 );
 
 --bun:split
 
 CREATE TABLE pg_nft_bids (
-    bidder_pkid      BINARY(33),
-    nft_post_hash    BINARY(32),
-    serial_number    BIGINT,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    bidder_pkid      BINARY(33) NOT NULL,
+    nft_post_hash    BINARY(32) NOT NULL,
+    serial_number    BIGINT NOT NULL,
     bid_amount_nanos BIGINT,
     accepted         BOOL,
 
-    PRIMARY KEY (bidder_pkid, nft_post_hash, serial_number)
+    UNIQUE INDEX (bidder_pkid, nft_post_hash, serial_number)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_derived_keys (
-    transaction_hash   BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash   BINARY(32) NOT NULL,
     derived_public_key BINARY(33) NOT NULL,
     expiration_block   BIGINT NOT NULL,
     operation_type     SMALLINT NOT NULL,
-    access_signature   BINARY(32) NOT NULL
+    access_signature   BINARY(32) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_derived_keys (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     owner_public_key   BINARY(33) NOT NULL,
     derived_public_key BINARY(33) NOT NULL,
     expiration_block   BIGINT NOT NULL,
     operation_type     SMALLINT NOT NULL,
 
-    PRIMARY KEY (owner_public_key, derived_public_key)
+    UNIQUE INDEX (owner_public_key, derived_public_key)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_nft_transfer (
-    transaction_hash    BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash    BINARY(32) NOT NULL,
     nft_post_hash       BINARY(32) NOT NULL,
     serial_number       BIGINT NOT NULL,
     receiver_public_key BINARY(33) NOT NULL,
-    unlockable_text     BINARY(32) NOT NULL
+    unlockable_text     BINARY(32) NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_accept_nft_transfer (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     nft_post_hash    BINARY(32) NOT NULL,
-    serial_number    BIGINT NOT NULL
+    serial_number    BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
 
 --bun:split
 
 CREATE TABLE pg_metadata_burn_nft (
-    transaction_hash BINARY(32) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_hash BINARY(32) NOT NULL,
     nft_post_hash    BINARY(32) NOT NULL,
-    serial_number    BIGINT NOT NULL
+    serial_number    BIGINT NOT NULL,
+
+    UNIQUE INDEX (transaction_hash)
 );
