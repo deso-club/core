@@ -39,6 +39,10 @@ func LogSelect(query *orm.Query) error {
 	return query.Select()
 }
 
+func LogError(err error) {
+	glog.Info(reflect.TypeOf(err))
+}
+
 const (
 	MAIN_CHAIN = "main"
 )
@@ -1470,7 +1474,7 @@ func (postgres *Postgres) flushFollows(tx bun.Tx, view *UtxoView) error {
 
 	if len(insertFollows) > 0 {
 		// No-op update on duplicate key
-		_, err := tx.NewInsert().Model(&insertFollows).On("DUPLICATE KEY UPDATE follower_pkid=follower_pkid").Exec(postgres.ctx)
+		_, err := tx.NewInsert().Model(&insertFollows).Exec(postgres.ctx)
 		if err != nil {
 			return err
 		}
@@ -1891,6 +1895,7 @@ func (postgres *Postgres) GetProfileForUsername(nonLowercaseUsername string) *PG
 	err := postgres.db.NewSelect().Model(&profile).
 		Where("LOWER(username) = ?", strings.ToLower(nonLowercaseUsername)).Limit(1).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return &profile
@@ -1900,15 +1905,17 @@ func (postgres *Postgres) GetProfileForPublicKey(publicKey []byte) *PGProfile {
 	var profile PGProfile
 	err := postgres.db.NewSelect().Model(&profile).Where("public_key = ?", publicKey).Limit(1).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return &profile
 }
 
-func (postgres *Postgres) GetProfile(pkid PKID) *PGProfile {
+func (postgres *Postgres) GetProfile(pkid *PKID) *PGProfile {
 	var profile PGProfile
 	err := postgres.db.NewSelect().Model(&profile).Where("pkid = ?", pkid).Limit(1).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return &profile
@@ -1916,9 +1923,9 @@ func (postgres *Postgres) GetProfile(pkid PKID) *PGProfile {
 
 func (postgres *Postgres) GetProfilesForPublicKeys(publicKeys []*PublicKey) []*PGProfile {
 	var profiles []*PGProfile
-	glog.Info("Getting profiles for public keys")
 	err := postgres.db.NewSelect().Model(&profiles).Where("public_key IN (?)", bun.In(publicKeys)).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return profiles
@@ -1929,6 +1936,7 @@ func (postgres *Postgres) GetProfilesByCoinValue(startLockedNanos uint64, limit 
 	err := postgres.db.NewSelect().Model(&profiles).Where("deso_locked_nanos < ?", startLockedNanos).
 		OrderExpr("deso_locked_nanos DESC").Limit(limit).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return profiles
@@ -1939,6 +1947,7 @@ func (postgres *Postgres) GetProfilesForUsernamePrefixByCoinValue(usernamePrefix
 	err := postgres.db.NewSelect().Model(&profiles).Where("username ILIKE ?", fmt.Sprintf("%s%%", usernamePrefix)).
 		Where("deso_locked_nanos >= 0").OrderExpr("deso_locked_nanos DESC").Limit(limit).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return profiles
@@ -1948,6 +1957,7 @@ func (postgres *Postgres) GetProfilesForUsername(usernames []string) []*PGProfil
 	var profiles []*PGProfile
 	err := postgres.db.NewSelect().Model(&profiles).Where("LOWER(username) IN (?)", bun.In(usernames)).Scan(postgres.ctx)
 	if err != nil {
+		LogError(err)
 		return nil
 	}
 	return profiles

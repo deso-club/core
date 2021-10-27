@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/deso-protocol/core/migrations"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/extra/bundebug"
 	"net"
 	"os"
 	"time"
@@ -137,7 +136,7 @@ func (node *Node) Start() {
 		db = bun.NewDB(sqldb, mysqldialect.New())
 		node.Postgres = lib.NewPostgres(db)
 		//if IsDebug() {
-		db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+		//db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 		//}
 
 		migrator := migrate.NewMigrator(db, migrations.Migrations)

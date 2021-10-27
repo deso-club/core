@@ -1914,10 +1914,10 @@ func (bc *Blockchain) ProcessBlock(desoBlock *MsgDeSoBlock, verifySignatures boo
 		}
 
 		// Preload the view with almost all of the data it will need to connect the block
-		err = utxoView.Preload(desoBlock)
-		if err != nil {
-			glog.Errorf("ProcessBlock: Problem preloading the view: %v", err)
-		}
+		//err = utxoView.Preload(desoBlock)
+		//if err != nil {
+		//	glog.Errorf("ProcessBlock: Problem preloading the view: %v", err)
+		//}
 
 		// Verify that the utxo view is pointing to the current tip.
 		if *utxoView.TipHash != *currentTip.Hash {
@@ -2887,7 +2887,7 @@ func (bc *Blockchain) CreateUpdateProfileTxn(
 	}
 
 	// The spend amount should equal to the additional fees for profile submissions.
-	if err = amountEqualsAdditionalOutputs(spendAmount - AdditionalFees, additionalOutputs); err != nil {
+	if err = amountEqualsAdditionalOutputs(spendAmount-AdditionalFees, additionalOutputs); err != nil {
 		return nil, 0, 0, 0, fmt.Errorf("CreateUpdateProfileTxn: %v", err)
 	}
 
@@ -3621,9 +3621,9 @@ func (bc *Blockchain) CreateBasicTransferTxnWithDiamonds(
 		PublicKey: SenderPublicKey,
 		TxnMeta:   &BasicTransferMetadata{},
 		TxOutputs: append(additionalOutputs, &DeSoOutput{
-				PublicKey:   diamondPostEntry.PosterPublicKey,
-				AmountNanos: desoToTransferNanos,
-			}),
+			PublicKey:   diamondPostEntry.PosterPublicKey,
+			AmountNanos: desoToTransferNanos,
+		}),
 		// TxInputs and TxOutputs will be set below.
 		// This function does not compute a signature.
 	}
@@ -3667,9 +3667,9 @@ func (bc *Blockchain) CreateMaxSpend(
 		// underestimate the fee. Note it must be a max size output because outputs
 		// are encoded as uvarints.
 		TxOutputs: append(additionalOutputs, &DeSoOutput{
-				PublicKey:   recipientPkBytes,
-				AmountNanos: math.MaxUint64,
-			}),
+			PublicKey:   recipientPkBytes,
+			AmountNanos: math.MaxUint64,
+		}),
 		// TxInputs and TxOutputs will be set below.
 		// This function does not compute a signature.
 	}

@@ -3730,20 +3730,23 @@ func (bav *UtxoView) _getLikeEntryForLikeKey(likeKey *LikeKey) *LikeEntry {
 	// If we get here it means no value exists in our in-memory map. In this case,
 	// defer to the db. If a mapping exists in the db, return it. If not, return
 	// nil. Either way, save the value to the in-memory view mapping got later.
-	likeExists := false
 	if bav.Postgres != nil {
-		likeExists = bav.Postgres.GetLike(likeKey.LikerPubKey[:], &likeKey.LikedPostHash) != nil
-	} else {
-		likeExists = DbGetLikerPubKeyToLikedPostHashMapping(bav.Handle, likeKey.LikerPubKey[:], likeKey.LikedPostHash) != nil
-	}
-
-	if likeExists {
-		likeEntry := LikeEntry{
-			LikerPubKey:   likeKey.LikerPubKey[:],
-			LikedPostHash: &likeKey.LikedPostHash,
+		like := bav.Postgres.GetLike(likeKey.LikerPubKey[:], &likeKey.LikedPostHash)
+		if like != nil {
+			likeEntry := like.NewLikeEntry()
+			bav._setLikeEntryMappings(likeEntry)
+			return likeEntry
 		}
-		bav._setLikeEntryMappings(&likeEntry)
-		return &likeEntry
+	} else {
+		likeExists := DbGetLikerPubKeyToLikedPostHashMapping(bav.Handle, likeKey.LikerPubKey[:], likeKey.LikedPostHash) != nil
+		if likeExists {
+			likeEntry := LikeEntry{
+				LikerPubKey:   likeKey.LikerPubKey[:],
+				LikedPostHash: &likeKey.LikedPostHash,
+			}
+			bav._setLikeEntryMappings(&likeEntry)
+			return &likeEntry
+		}
 	}
 
 	return nil
@@ -3838,20 +3841,23 @@ func (bav *UtxoView) _getFollowEntryForFollowKey(followKey *FollowKey) *FollowEn
 	// If we get here it means no value exists in our in-memory map. In this case,
 	// defer to the db. If a mapping exists in the db, return it. If not, return
 	// nil. Either way, save the value to the in-memory view mapping got later.
-	followExists := false
 	if bav.Postgres != nil {
-		followExists = bav.Postgres.GetFollow(&followKey.FollowerPKID, &followKey.FollowedPKID) != nil
-	} else {
-		followExists = DbGetFollowerToFollowedMapping(bav.Handle, &followKey.FollowerPKID, &followKey.FollowedPKID) != nil
-	}
-
-	if followExists {
-		followEntry := FollowEntry{
-			FollowerPKID: &followKey.FollowerPKID,
-			FollowedPKID: &followKey.FollowedPKID,
+		follow := bav.Postgres.GetFollow(&followKey.FollowerPKID, &followKey.FollowedPKID)
+		if follow != nil {
+			followEntry := follow.NewFollowEntry()
+			bav._setFollowEntryMappings(followEntry)
+			return followEntry
 		}
-		bav._setFollowEntryMappings(&followEntry)
-		return &followEntry
+	} else {
+		followExists := DbGetFollowerToFollowedMapping(bav.Handle, &followKey.FollowerPKID, &followKey.FollowedPKID) != nil
+		if followExists {
+			followEntry := FollowEntry{
+				FollowerPKID: &followKey.FollowerPKID,
+				FollowedPKID: &followKey.FollowedPKID,
+			}
+			bav._setFollowEntryMappings(&followEntry)
+			return &followEntry
+		}
 	}
 
 	return nil
@@ -4886,7 +4892,7 @@ func (bav *UtxoView) GetPublicKeyForPKID(pkid *PKID) []byte {
 	// isDeleted on the view. If not for isDeleted, we wouldn't need the PKIDEntry
 	// wrapper.
 	if bav.Postgres != nil {
-		profile := bav.Postgres.GetProfile(*pkid)
+		profile := bav.Postgres.GetProfile(pkid)
 		if profile == nil {
 			pkidEntry := &PKIDEntry{
 				PKID:      pkid,
@@ -4955,7 +4961,7 @@ func (bav *UtxoView) GetProfileEntryForPKID(pkid *PKID) *ProfileEntry {
 	// nil.
 	if bav.Postgres != nil {
 		// Note: We should never get here but writing this code just in case
-		profile := bav.Postgres.GetProfile(*pkid)
+		profile := bav.Postgres.GetProfile(pkid)
 		if profile == nil {
 			return nil
 		}
